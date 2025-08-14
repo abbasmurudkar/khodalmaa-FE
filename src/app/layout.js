@@ -1,5 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import 'rsuite/dist/rsuite.min.css';
+import ToastProvider from "@/constant/constant";
+import { ProfileProvider } from "@/context/profileprovider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +25,10 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <ProfileProvider>
+        <ToastProvider />
         {children}
+        </ProfileProvider>
       </body>
     </html>
   );
