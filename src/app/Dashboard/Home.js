@@ -1,17 +1,16 @@
 "use client";
 import styled from "styled-components";
 import { useState } from "react";
-import MenuIcon from "@rsuite/icons/Menu";
-import CloseIcon from "@rsuite/icons/Close";
+
 import Link from "next/link";
 import { Button, ButtonToolbar } from "rsuite";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Vortex } from "@/components/ui/vortex";
 import { useRouter } from "next/navigation";
+import Nav from "@/components/ui/Nav";
 
 const Home = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useRouter()
   return (
     <Body>
@@ -21,25 +20,7 @@ const Home = () => {
         baseSpeed={0.5}
         baseRadius={1.5}
   >
-      <NavbarKhodalma>
-        <div className="left-section">
-          <h2 className="brand">Khodalmaa</h2>
-        </div>
-
-        <div className={`right-section ${menuOpen ? "open" : ""}`}>
-          <Link href="/">Home</Link>
-          <Link href="/">About Us</Link>
-          <Link href="/">Contact Us</Link>
-          <Button appearance="primary" color="cyan" size="md">
-            Sign Out
-          </Button>
-        </div>
-
-        <div className="menu-toggle" onClick={() => setMenuOpen((prev) => !prev)}>
-          {menuOpen ? <CloseIcon /> : <MenuIcon />}
-        </div>
-      </NavbarKhodalma>
-
+      <Nav/>
       <div className="banner">
         <motion.div
           className="banner-left"
@@ -69,7 +50,7 @@ const Home = () => {
               <Button appearance="primary" color="cyan" size="lg" style={{ width: "200px" }} >
                 Project 10
               </Button>
-              <Button appearance="ghost" color="cyan" size="lg" style={{ width: "200px" }} onClick={()=>navigate.push("/project220",target="_blank")}>
+              <Button appearance="ghost" color="cyan" size="lg" style={{ width: "200px" }} onClick={()=>navigate.push("/project220","_blank")}>
                 Project 220
               </Button>
             </ButtonToolbar>
@@ -94,6 +75,8 @@ const Body = styled.div`
   min-height: 100vh;
   background: linear-gradient(to bottom, #f8fbfd, #eef4f7);
   font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+
   .hr {
     height: 2px;
     width: 50%;
@@ -105,23 +88,32 @@ const Body = styled.div`
 
   .banner {
     display: flex;
+    flex-wrap: wrap; 
     align-items: center;
+    justify-content: center;
     padding: 60px 5%;
     gap: 40px;
 
     .banner-left,
     .banner-right {
       flex: 1;
+      min-width: 280px;
     }
 
     .banner-left {
       display: flex;
       justify-content: center;
+
+      img {
+        max-width: 100%; 
+        height: auto;
+      }
     }
 
     .banner-right {
       display: flex;
       align-items: center;
+      justify-content: center; 
 
       .content {
         max-width: 500px;
@@ -162,25 +154,25 @@ const Body = styled.div`
     .banner {
       flex-direction: column;
       text-align: center;
-      padding: 40px 5%;
+      padding: 30px 5%; 
+      gap: 20px; 
+    }
 
-      .banner-left {
-        order: 1;
-      }
-      .banner-right {
-        order: 2;
-        justify-content: center;
+    .banner-left {
+      order: 1;
+    }
+    .banner-right {
+      order: 2;
 
-        .content {
-          h1 {
-            font-size: 1.8rem;
-          }
-          p {
-            font-size: 0.95rem;
-          }
-          button {
-            width: 100% !important;
-          }
+      .content {
+        h1 {
+          font-size: 1.8rem;
+        }
+        p {
+          font-size: 0.95rem;
+        }
+        button {
+          width: 96% !important;
         }
       }
     }
@@ -192,83 +184,18 @@ const Body = styled.div`
 
   @media (max-width: 480px) {
     .banner {
-      padding: 30px 3%;
+      padding: 20px 3%;
+    }
 
-      .banner-right .content h1 {
-        font-size: 1.6rem;
-      }
-      .banner-right .content p {
-        font-size: 0.9rem;
-      }
+    .banner-right .content h1 {
+      font-size: 1.6rem;
+    }
+    .banner-right .content p {
+      font-size: 0.9rem;
     }
 
     .hr {
       width: 80%;
-    }
-  }
-`;
-
-const NavbarKhodalma = styled.div`
-  height: 70px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 5%;
-  color: white;
-  background: #1e3a4c;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-
-  .brand {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #00c2d1;
-  }
-
-  .right-section {
-    display: flex;
-    align-items: center;
-    gap: 25px;
-
-    a {
-      color: white;
-      text-decoration: none;
-      font-size: 1rem;
-      font-weight: 500;
-      transition: all 0.2s ease-in;
-      &:hover {
-        color: #00c2d1;
-      }
-    }
-  }
-
-  .menu-toggle {
-    display: none;
-    font-size: 1.8rem;
-    cursor: pointer;
-    color: white;
-  }
-
-  @media (max-width: 768px) {
-    .right-section {
-      display: none;
-      flex-direction: column;
-      background: #1e3a4c;
-      position: absolute;
-      top: 70px;
-      right: 0;
-      width: 220px;
-      border-radius: 0 0 10px 10px;
-      padding: 15px;
-      gap: 15px;
-    }
-    .right-section.open {
-      display: flex;
-    }
-    .menu-toggle {
-      display: block;
     }
   }
 `;

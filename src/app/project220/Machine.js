@@ -1,5 +1,10 @@
-"use client"
+"use client";
 import React, { useState, useRef, useEffect } from "react";
+import { DataGrid } from "@mui/x-data-grid";
+import "rsuite/dist/rsuite.min.css";
+import "rsuite-table/dist/css/rsuite-table.css";
+import Nav from "@/components/ui/Nav";
+import { Button } from "rsuite";
 
 const HARDCODED_NUM1 = {
   1: [
@@ -43,7 +48,6 @@ const HARDCODED_NUM1 = {
     299, 334, 488, 550, 668, 677, 0,
   ],
 };
-
 const WebSocketTable = () => {
   const [tablesData, setTablesData] = useState({
     Machine1: {},
@@ -52,17 +56,14 @@ const WebSocketTable = () => {
     Summed: {},
   });
 
-  // Using a ref to store machine data to ensure we keep track of latest values
-  // even when we receive partial updates
   const machineStore = useRef({
     Machine1: {},
     Machine2: {},
     Machine3: {},
   });
 
-  const allColumns = Object.keys(HARDCODED_NUM1).map(Number);
+const allColumns = Array.from({ length: 10 }, (_, i) => String(i + 1));
 
-  // Function to recalculate summed data whenever machine data changes
   const recalculateSummedData = () => {
     const updatedMachines = machineStore.current;
     const summedData = {};
@@ -70,15 +71,9 @@ const WebSocketTable = () => {
     allColumns.forEach((col) => {
       const keys = HARDCODED_NUM1[col];
       summedData[col] = keys.map((key, idx) => {
-        const val1 = parseFloat(
-          updatedMachines.Machine1[col]?.[idx]?.split("->")[1] || 0
-        );
-        const val2 = parseFloat(
-          updatedMachines.Machine2[col]?.[idx]?.split("->")[1] || 0
-        );
-        const val3 = parseFloat(
-          updatedMachines.Machine3[col]?.[idx]?.split("->")[1] || 0
-        );
+        const val1 = parseFloat(updatedMachines.Machine1[col]?.[idx]?.split("->")[1] || 0);
+        const val2 = parseFloat(updatedMachines.Machine2[col]?.[idx]?.split("->")[1] || 0);
+        const val3 = parseFloat(updatedMachines.Machine3[col]?.[idx]?.split("->")[1] || 0);
         return `${key}->${val1 + val2 + val3}`;
       });
     });
@@ -92,70 +87,38 @@ const WebSocketTable = () => {
     socket.onmessage = (event) => {
       try {
         const jsonData = JSON.parse(event.data);
-        console.log(jsonData)
-        // Create a copy of the current machine data
         const updatedMachines = { ...machineStore.current };
 
-        // Log the received data for debugging
-        console.log("Received WebSocket Data:", jsonData);
-
-        // Process each machine's data if present
         ["machine1", "machine2", "machine3"].forEach((machine) => {
           const machineData = jsonData[machine];
-          // Skip if this machine's data is not present in this message
           if (!machineData) return;
 
-          console.log(`${machine} Input:`, machineData);
-
-          // Convert machine key format (e.g., "machine1" to "Machine1")
           const machineKey = machine.charAt(0).toUpperCase() + machine.slice(1);
-          // Get current data for this machine or initialize empty object
           const currentData = { ...updatedMachines[machineKey] };
 
-          // Process each column of data for this machine
           Object.entries(machineData).forEach(([colStr, entries]) => {
             const col = parseInt(colStr);
             const hardcodedKeys = HARDCODED_NUM1[col];
+            const newData = [...(currentData[col] || new Array(hardcodedKeys.length).fill(null))];
+            const keyToIndex = Object.fromEntries(hardcodedKeys.map((key, i) => [key, i]));
 
-            // Initialize or maintain existing column data
-            const newData = [
-              ...(currentData[col] ||
-                new Array(hardcodedKeys.length).fill(null)),
-            ];
-
-            // Create mapping of keys to indices for easy lookups
-            const keyToIndex = Object.fromEntries(
-              hardcodedKeys.map((key, i) => [key, i])
-            );
-
-            // Process each entry in this column
             entries.forEach((entry) => {
               const [k, v] = entry.split("->").map((x) => x.trim());
-              const key = parseInt(k),
-                val = parseFloat(v);
+              const key = parseInt(k), val = parseFloat(v);
               if (!isNaN(val) && keyToIndex.hasOwnProperty(key)) {
                 newData[keyToIndex[key]] = `${key}->${val}`;
               }
             });
 
-            // Update column data
             currentData[col] = newData;
           });
-
-          // Update this machine's data in our store
           updatedMachines[machineKey] = currentData;
         });
 
-        // Update machine store with new data
         machineStore.current = updatedMachines;
-
-        // Recalculate summed data based on all machines
         const summedData = recalculateSummedData();
 
-        setTablesData({
-          ...updatedMachines,
-          Summed: summedData,
-        });
+        setTablesData({ ...updatedMachines, Summed: summedData });
       } catch (error) {
         console.error("Error parsing WebSocket data:", error);
       }
@@ -174,6 +137,45 @@ const WebSocketTable = () => {
     }
     return result;
   };
+ const getThreeLowestValuesInHalves = (data, columnNo) => {
+  const result = {};
+
+  // If columnNo is given, only process that column
+  const targetEntries = columnNo !== undefined
+    ? { [columnNo]: data[columnNo] }
+    : data;
+
+  for (const [col, values] of Object.entries(targetEntries)) {
+    // First half: rows 0-11
+    const firstHalf = values.slice(0, 11);
+    const parsedFirst = firstHalf
+      .map((entry) => ({ entry, val: parseFloat(entry?.split("->")[1]) }))
+      .filter((x) => !isNaN(x.val))
+      .sort((a, b) => a.val - b.val)
+      .slice(0, 3)
+      .map((x) => x.entry);
+
+    // Second half: rows 11-21
+    const secondHalf = values.slice(11, 21);
+    const parsedSecond = secondHalf
+      .map((entry) => ({ entry, val: parseFloat(entry?.split("->")[1]) }))
+      .filter((x) => !isNaN(x.val))
+      .sort((a, b) => a.val - b.val)
+      .slice(0, 3)
+      .map((x) => x.entry);
+
+    result[col] = {
+      firstHalf: parsedFirst,
+      secondHalf: parsedSecond
+    };
+  }
+
+  return result;
+};
+
+
+
+
   const sendToTelegram = async (title, messageObj) => {
     const message = Object.entries(messageObj)
       .map(([col, entries]) => {
@@ -200,107 +202,210 @@ const WebSocketTable = () => {
   };
 
   const handleSendBothHalves = () => {
+    const firstHalf = getThreeLowestValues(tablesData["Summed"], 0, 11);
+    const secondHalf = getThreeLowestValues(tablesData["Summed"], 11, 21);
+    const merged = {};
+
+    for (const col of allColumns) {
+      const upEntries = firstHalf[col] || [];
+      const downEntries = secondHalf[col] || [];
+      const cleanedEntries = [...upEntries, ...downEntries].map(entry =>
+        entry.replace(/^↑|^↓/, '').split("->")[0].trim()
+      );
+      merged[col] = cleanedEntries;
+    }
+
+    sendToTelegram("🟣 Both Halves Lowest Values", merged);
+  };
+
+
+// const handleSendBothHalvesColumn = (columnName = null) => {
+//   const firstHalf = getThreeLowestValues(tablesData["Summed"], 0, 11);
+//   const secondHalf = getThreeLowestValues(tablesData["Summed"], 11, 21);
+  
+//   const merged = {};
+  
+//   // Decide which columns to process
+//   const columnsToProcess = columnName ? [columnName] : allColumns;
+  
+//   for (const col of columnsToProcess) {
+//     const upEntries = firstHalf[col] || [];
+//     const downEntries = secondHalf[col] || [];
+
+//     const cleanedEntries = [...upEntries, ...downEntries]
+//       .map(entry => entry.replace(/^↑|^↓/, '').split("->")[0].trim());
+
+//     merged[col] = cleanedEntries;
+//   }
+
+//   sendToTelegram(
+//     `🟣 Both Halves Lowest Values${columnName ? ` for ${columnName}` : ""}`,
+//     merged
+//   );
+// };
+
+// console.log(handleSendBothHalvesColumn("1"))
+
+const renderTable = (machine) => {
+  const data = tablesData[machine] || {};
+  const minFirstHalf = getThreeLowestValues(data, 0, 11);
+  const minSecondHalf = getThreeLowestValues(data, 11, 21);
+
+  const maxRows = Math.max(...Object.values(data).map((col) => col.length), 0);
+
+ const rows = Array.from({ length: maxRows }).map((_, rowIdx) => {
+  const rowObj = { id: rowIdx }; 
+  allColumns.forEach((col) => {
+    rowObj[col] = data[col]?.[rowIdx] || "";
+  });
+  return rowObj;
+});
+
+
+ const columns = allColumns
+  .filter((col) => col !== "id")
+  .map((col) => ({
+    field: col,
+    headerName: col,
+    width: 120,
+    sortable: false,
+    // renderHeader: (params) => (
+    //   <div
+    //     onClick={() => handleSendBothHalvesColumn(col)}
+    //     style={{
+    //       cursor: "pointer",
+    //       fontWeight: "bold",
+    //       color: "#032859",
+    //       userSelect: "none"
+    //     }}
+    //     title={`Click to send lowest values for ${col}`}
+    //   >
+    //     {col}
+    //   </div>
+    // ),
+
+    renderCell: (params) => {
+      const value = params.value;
+      const highlight =
+        (params.id < 11 && minFirstHalf[col]?.includes(value)) ||
+        (params.id >= 11 && params.id < 21 && minSecondHalf[col]?.includes(value));
+
+      return (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            backgroundColor: highlight ? "#032859" : "transparent",
+            color: highlight ? "#00ffff" : "black",
+            border: highlight ? "1px solid #00ffff" : "none",
+            borderRadius: highlight ? "4px" : "0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {value}
+        </div>
+      );
+    },
+  }));
+
+const handleSendBothHalvesColumn = (columnName = null) => {
   const firstHalf = getThreeLowestValues(tablesData["Summed"], 0, 11);
   const secondHalf = getThreeLowestValues(tablesData["Summed"], 11, 21);
+
   const merged = {};
 
-  for (const col of allColumns) {
+  const columnsToProcess = columnName ? [columnName] : allColumns;
+
+  for (const col of columnsToProcess) {
     const upEntries = firstHalf[col] || [];
     const downEntries = secondHalf[col] || [];
 
-    // Combine entries, then clean: remove arrow and anything after "->"
-    const cleanedEntries = [...upEntries, ...downEntries].map(entry => {
-      const raw = entry.replace(/^↑|^↓/, '').split("->")[0];
-      return raw.trim();
-    });
+    const cleanedEntries = [...upEntries, ...downEntries]
+      .map(entry => entry.replace(/^↑|^↓/, '').split("->")[0].trim());
 
     merged[col] = cleanedEntries;
   }
 
-  sendToTelegram("🟣 Both Halves Lowest Values", merged);
-  };
+  sendToTelegram(
+    `🟣 Both Halves Lowest Values${columnName ? ` for ${columnName}` : ""}`,
+    merged
+  );
+};
 
-  const renderTable = (machine) => {
-    const data = tablesData[machine] || {};
-    const minFirstHalf = getThreeLowestValues(data, 0, 11);
-    const minSecondHalf = getThreeLowestValues(data, 11, 21);
-
-    const maxRows = Math.max(
-      ...Object.values(data).map((col) => col.length),
-      0
-    );
-
-    return (
-      <div key={machine} className="mb-12">
-        <h3 className="font-bold text-3xl mb-4">{machine}</h3>
-        <table
-          className="table-auto border-collapse border w-full text-xl"
-          style={{ tableLayout: "fixed" }}
-        >
-          <thead>
-            <tr className="bg-gray-300">
-              {allColumns.map((col) => (
-                <th key={col} className="border px-6 py-3">
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: maxRows }).map((_, rowIdx) => (
-              <tr key={rowIdx}>
-                {allColumns.map((col) => {
-                  const colData = data[col] || [];
-                  const cell = colData[rowIdx] || "";
-                  const isMin =
-                    (rowIdx < 11 && minFirstHalf[col]?.includes(cell)) ||
-                    (rowIdx >= 11 &&
-                      rowIdx < 21 &&
-                      minSecondHalf[col]?.includes(cell));
-                  return (
-                    <td
-                      key={col}
-                      className="border px-6 py-3 text-center"
-                      style={
-                        isMin
-                          ? {
-                              backgroundColor: "#03055B",
-                              color: "white",
-                              border: "4px solid blue",
-                            }
-                          : {}
-                      }
-                    >
-                      {cell}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
 
   return (
-    <div className="overflow-auto p-6" style={{background:"black",color:"white"}}>
-      <div className="mb-6 flex flex-wrap gap-4">
-        <button onClick={handleSendFirstHalf} className="bg-blue-600 text-white px-4 py-2 rounded shadow">
-          📤 Send First Half
-        </button>
-        <button onClick={handleSendSecondHalf} className="bg-green-600 text-white px-4 py-2 rounded shadow">
-          📤 Send Second Half
-        </button>
-        <button onClick={handleSendBothHalves} className="bg-purple-600 text-white px-4 py-2 rounded shadow">
-          📤 Send Both
-        </button>
+    <div key={machine} style={{ marginBottom: "3rem" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: "12px",
+        }}
+      >
+        <h3 style={{ fontSize: "1.75rem", fontWeight: "bold", color: "#477998ff" }}>
+          {machine}
+        </h3>
+
+        <div className=""></div>
+        {machine === "Summed" && (
+          <div style={{ display: "flex", gap: "8px" }}>
+            <Button appearance="primary" color="orange" style={{background:"#477998ff"}} onClick={handleSendFirstHalf}>
+              Send First Half
+            </Button>
+            <Button appearance="primary" color="green" style={{background:"#477998ff"}} onClick={handleSendSecondHalf}>
+              Send Second Half
+            </Button>
+            <Button appearance="primary" color="violet" style={{background:"#477998ff"}} onClick={handleSendBothHalves}>
+              Send Both
+            </Button>
+          </div>
+        )}
       </div>
+
+      <div style={{ height: 500, width: "100%", background: "#121212" }}>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          disableRowSelectionOnClick
+          hideFooter
+          rowHeight= {60}
+          sx={{
+    color: "#ccc",
+    border: "none",
+    "& .MuiDataGrid-columnHeaders": {
+      backgroundColor: "#222",
+    },
+    "& .MuiDataGrid-columnHeader": {
+      color: "black",
+      fontWeight: "bold",
+      fontSize: "1.1rem",
+    },
+    "& .MuiDataGrid-cell": {
+      borderColor: "#333",
+    },
+  }}
+        />
+      </div>
+    </div>
+  );
+};
+
+
+  return (
+    <div style={{ minHeight: "100vh" }}>
+      <div className="tables" style={{padding:"40px"}}>
       {["Machine1", "Machine2", "Machine3", "Summed"].map(renderTable)}
+      <style>{`
+        .hover-row:hover {
+          background-color: rgba(0, 224, 255, 0.05) !important;
+        }
+      `}</style>
+      </div>
     </div>
   );
 };
 
 export default WebSocketTable;
-
-
+  

@@ -1,11 +1,15 @@
-// page.js
+import React from 'react'
+import WebSocketTable from './Machine'
+import Nav from '@/components/ui/Nav'
+import PrivateRoute from '@/components/privateRoute'
 
-import MachinesDashboard from "./Machine";
-
-export default async function Page() {
-  // Get initial data from backend
-  const res = await fetch("https://be.khodalmaa.in/api/v1/project1_latest", { cache: "no-store" });
-  const initialData = await res.json();
-
-  return <MachinesDashboard initialData={initialData} />;
+const page = () => {
+  return (
+    <PrivateRoute>
+      <Nav/>
+      <WebSocketTable/>
+    </PrivateRoute>
+  )
 }
+
+export default page
