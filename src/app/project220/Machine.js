@@ -182,7 +182,7 @@ const WebSocketTable = () => {
       })
       .join(",");
 
-    await fetch("http://be.khodalmaa.in/api/v1/send-alert", {
+    await fetch("https://be.khodalmaa.in/api/v1/send-alert", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message }),

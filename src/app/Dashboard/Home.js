@@ -69,7 +69,7 @@ const Home = () => {
               <Button appearance="primary" color="cyan" size="lg" style={{ width: "200px" }} >
                 Project 10
               </Button>
-              <Button appearance="ghost" color="cyan" size="lg" style={{ width: "200px" }} onClick={()=>navigate.push("/project220")}>
+              <Button appearance="ghost" color="cyan" size="lg" style={{ width: "200px" }} onClick={()=>navigate.push("/project220",target="_blank")}>
                 Project 220
               </Button>
             </ButtonToolbar>
