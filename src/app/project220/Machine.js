@@ -3,9 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import "rsuite/dist/rsuite.min.css";
 import "rsuite-table/dist/css/rsuite-table.css";
-import Nav from "@/components/ui/Nav";
 import { Button } from "rsuite";
-
+import styled from "styled-components";
 const HARDCODED_NUM1 = {
   1: [
     128, 137, 146, 236, 245, 290, 380, 470, 489, 560, 579, 678, 100, 119, 155,
@@ -336,7 +335,7 @@ const handleSendBothHalvesColumn = (columnName = null) => {
 
 
   return (
-    <div key={machine} style={{ marginBottom: "3rem" }}>
+    <Body key={machine} style={{ marginBottom: "3rem" }}>
       <div
         style={{
           display: "flex",
@@ -344,24 +343,34 @@ const handleSendBothHalvesColumn = (columnName = null) => {
           marginBottom: "12px",
         }}
       >
-        <h3 style={{ fontSize: "1.75rem", fontWeight: "bold", color: "#477998ff" }}>
+        <h3 style={{ fontSize: "1.75rem", fontWeight: "bold", color: "#477998ff" }} className="mq450:block">
           {machine}
         </h3>
-
-        <div className=""></div>
-        {machine === "Summed" && (
-          <div style={{ display: "flex", gap: "8px" }}>
-            <Button appearance="primary" color="orange" style={{background:"#477998ff"}} onClick={handleSendFirstHalf}>
-              Send First Half
-            </Button>
-            <Button appearance="primary" color="green" style={{background:"#477998ff"}} onClick={handleSendSecondHalf}>
-              Send Second Half
-            </Button>
-            <Button appearance="primary" color="violet" style={{background:"#477998ff"}} onClick={handleSendBothHalves}>
-              Send Both
-            </Button>
-          </div>
-        )}
+          {machine === "Summed" && (
+      <div className="summed-buttons">
+        <Button
+          appearance="primary"
+          style={{ background: "#477998ff" }}
+          onClick={handleSendFirstHalf}
+        >
+          Send First Half
+        </Button>
+        <Button
+          appearance="primary"
+          style={{ background: "#477998ff" }}
+          onClick={handleSendSecondHalf}
+        >
+          Send Second Half
+        </Button>
+        <Button
+          appearance="primary"
+          style={{ background: "#477998ff" }}
+          onClick={handleSendBothHalves}
+        >
+          Send Both
+        </Button>
+      </div>
+    )}
       </div>
 
       <div style={{ height: 500, width: "100%", background: "#121212" }}>
@@ -388,7 +397,7 @@ const handleSendBothHalvesColumn = (columnName = null) => {
   }}
         />
       </div>
-    </div>
+    </Body>
   );
 };
 
@@ -409,3 +418,37 @@ const handleSendBothHalvesColumn = (columnName = null) => {
 
 export default WebSocketTable;
   
+
+const Body = styled.div`
+  .summed-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .summed-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 450px) {
+    .summed-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .summed-buttons {
+      width: 130px;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .summed-buttons button {
+      width: 100%;
+    }
+  }
+`;

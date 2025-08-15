@@ -15,6 +15,25 @@
   font-family: Arial, Helvetica, sans-serif;
 } */
 
+/* Mobile adjustments for <= 450px width */
+@media (max-width: 450px) {
+  .summed-header {
+    flex-direction: column;
+    align-items: flex-start; /* buttons align left */
+  }
+
+  .summed-buttons {
+    width: 100%;
+    display: flex;
+    flex-direction: column; /* stack buttons vertically */
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .summed-buttons button {
+    width: 100%; /* make buttons full width */
+  }
+}
 
 
 @layer base {
